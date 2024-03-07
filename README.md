@@ -24,6 +24,9 @@ diff csv.json.txt prn.json.txt
 ## Assumptions
 
 - Data schema is constant
+- Address treated as free text, print as provided
+- Postcode treated as free text, print as provided
+- Phone without country cannot be printed in a standard format, so treat as free text and print as provided
 
 <details>
 <summary>Task description</summary>
