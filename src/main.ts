@@ -32,6 +32,10 @@ async function readCSV (inputStream: Readable): Promise<IWorkbook[]> {
   })
 }
 
+async function writeJSON (records: IWorkbook[]): Promise<void> {
+  console.log(JSON.stringify(records))
+}
+
 async function main(): Promise<void> {
   
   //
@@ -60,16 +64,25 @@ async function main(): Promise<void> {
   //
 
   const inputStream = process.stdin
-  let records: IWorkbook[]
+  let records: IWorkbook[] = []
 
   if (inFormat === 'csv') {
-    records = await readCSV (inputStream)
+    records = await readCSV(inputStream)
     console.log(records)
   } else {
     console.log('PRN input not implemented')
   }
 
-  console.log('Output format not implemented: ' + outFormat)
+  //
+  // Output stream
+  //
+
+  if (outFormat === 'json') {
+    await writeJSON(records)
+  } else {
+    console.log('HTML output not implemented')
+  }
+  
 }
 
 main()
