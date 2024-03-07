@@ -36,6 +36,22 @@ async function writeJSON (records: IWorkbook[]): Promise<void> {
   console.log(JSON.stringify(records))
 }
 
+async function writeHTML (records: IWorkbook[]): Promise<void> {
+  console.log('<!DOCTYPE html>')
+  console.log('<html>')
+  console.log('<body>')
+  console.log('<table>')
+  console.log('<tr>')
+  Object.keys(colParser).forEach(key => console.log(`<th>${key}</th>`))
+  console.log('</tr>')
+  records.forEach(record => {
+      console.log(`<tr><td>${record.Name}</td><td>${record.Address}</td><td>${record.Postcode}</td><td>${record.Phone}</td><td>${record.CreditLimit}</td><td>${record.Birthday}</td></tr>`);
+  });
+  console.log('</table>');
+  console.log('</body>');
+  console.log('</html>');
+}
+
 async function main(): Promise<void> {
   
   //
@@ -80,7 +96,7 @@ async function main(): Promise<void> {
   if (outFormat === 'json') {
     await writeJSON(records)
   } else {
-    console.log('HTML output not implemented')
+    await writeHTML(records)
   }
   
 }

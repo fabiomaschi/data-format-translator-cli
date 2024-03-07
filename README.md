@@ -13,11 +13,11 @@ npm run build
 
 ## Main test
 ```bash
-cat ./Workbook2.csv | node src/main.js csv html > csv.html.txt
-cat ./Workbook2.prn | node src/main.js prn html > prn.html.txt
+cat ./Workbook2.csv | node dist/main.js csv html > csv.html.txt
+cat ./Workbook2.prn | node dist/main.js prn html > prn.html.txt
 diff csv.html.txt prn.html.txt
-cat ./Workbook2.csv | node src/main.js csv json > csv.json.txt
-cat ./Workbook2.prn | node src/main.js prn json > prn.json.txt
+cat ./Workbook2.csv | node dist/main.js csv json > csv.json.txt
+cat ./Workbook2.prn | node dist/main.js prn json > prn.json.txt
 diff csv.json.txt prn.json.txt
 ```
 
