@@ -1,0 +1,23 @@
+{
+  "name": "data-format-translator-cli",
+  "version": "1.0.0",
+  "description": "Converts .csv and .prn files into .json and .html",
+  "author": "Fabio Maschi",
+  "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fabiomaschi/data-format-translator-cli.git"
+  },
+  "main": "src/main.ts",
+  "scripts": {
+    "start": "node dist/main.js",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.2"
+  },
+  "dependencies": {
+    "csvtojson": "^2.0.10"
+  }
+}
