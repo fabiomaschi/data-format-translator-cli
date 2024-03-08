@@ -1,6 +1,9 @@
 import * as csvToJson from 'csvtojson'
 import { Readable } from 'stream'
 
+//
+// Data schema
+//
 interface IWorkbook {
   Name: string
   Address: string
@@ -19,6 +22,8 @@ const colParser = {
   Birthday: 'date'
 }
 
+const columnTitles = ["Name", "Address", "Postcode", "Phone", "Credit Limit", "Birthday"]
+
 async function readCSV (inputStream: Readable): Promise<IWorkbook[]> {
   return await new Promise((resolve, reject) => {
     void csvToJson({ checkColumn: true, colParser, headers: Object.keys(colParser), ignoreEmpty: true })
@@ -30,6 +35,47 @@ async function readCSV (inputStream: Readable): Promise<IWorkbook[]> {
         resolve(json)
       })
   })
+}
+
+function getColumnSizes (titleLine: string): number[] {
+  console.log(titleLine)
+
+  const columnSizes: number[] = []
+
+  for (const title of columnTitles) {
+    const startPos = titleLine.indexOf(title)
+    if (startPos === -1) {
+      console.error(`Column "${title}" not found`)
+      process.exit(1)
+    }
+
+    const endPos = titleLine.indexOf(columnTitles[columnTitles.indexOf(title) + 1], startPos)
+    if (endPos !== -1) {
+      columnSizes.push(endPos - startPos)
+    } else {
+      columnSizes.push(titleLine.length - startPos)
+    }
+  }
+
+  return columnSizes;
+}
+
+async function readPRN (inputStream: Readable): Promise<IWorkbook[]> {
+  // convert stream to raw lines
+  const chunks = [];
+  for await (let chunk of inputStream) {
+    chunks.push(chunk);
+  }
+
+  const rawLines = Buffer.concat(chunks).toString().split('\r\n')
+
+  console.log(rawLines)
+
+  // first line determines the column sizes
+  let colSizes: number[] = getColumnSizes(rawLines[0])
+  console.log(colSizes)
+
+  return []
 }
 
 async function writeJSON (records: IWorkbook[]): Promise<void> {
@@ -45,11 +91,11 @@ async function writeHTML (records: IWorkbook[]): Promise<void> {
   Object.keys(colParser).forEach(key => console.log(`<th>${key}</th>`))
   console.log('</tr>')
   records.forEach(record => {
-      console.log(`<tr><td>${record.Name}</td><td>${record.Address}</td><td>${record.Postcode}</td><td>${record.Phone}</td><td>${record.CreditLimit}</td><td>${record.Birthday}</td></tr>`);
+    console.log(`<tr><td>${record.Name}</td><td>${record.Address}</td><td>${record.Postcode}</td><td>${record.Phone}</td><td>${record.CreditLimit}</td><td>${record.Birthday}</td></tr>`)
   });
-  console.log('</table>');
-  console.log('</body>');
-  console.log('</html>');
+  console.log('</table>')
+  console.log('</body>')
+  console.log('</html>')
 }
 
 async function main(): Promise<void> {
@@ -84,10 +130,11 @@ async function main(): Promise<void> {
 
   if (inFormat === 'csv') {
     records = await readCSV(inputStream)
-    console.log(records)
   } else {
-    console.log('PRN input not implemented')
+    records = await readPRN(inputStream)
   }
+
+  console.log(records)
 
   //
   // Output stream
