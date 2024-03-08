@@ -10,7 +10,7 @@ interface IWorkbook {
   Postcode: string
   Phone: string
   CreditLimit: number
-  Birthday: Date
+  Birthday: string
 }
 
 const colParser = {
@@ -19,7 +19,7 @@ const colParser = {
   Postcode: 'string',
   Phone: 'string',
   CreditLimit: 'number',
-  Birthday: 'date'
+  Birthday: 'string'
 }
 
 const columnTitles = ["Name", "Address", "Postcode", "Phone", "Credit Limit", "Birthday"]
@@ -38,8 +38,6 @@ async function readCSV (inputStream: Readable): Promise<IWorkbook[]> {
 }
 
 function getColumnSizes (titleLine: string): number[] {
-  console.log(titleLine)
-
   const columnSizes: number[] = []
 
   for (const title of columnTitles) {
@@ -60,22 +58,43 @@ function getColumnSizes (titleLine: string): number[] {
   return columnSizes;
 }
 
+function parseDate (raw: string): string {
+  return `${raw.substring(6, 8)}/${raw.substring(4, 6)}/${raw.substring(0, 4)}`
+}
+
 async function readPRN (inputStream: Readable): Promise<IWorkbook[]> {
   // convert stream to raw lines
   const chunks = [];
   for await (let chunk of inputStream) {
     chunks.push(chunk);
   }
-
   const rawLines = Buffer.concat(chunks).toString().split('\r\n')
-
-  console.log(rawLines)
 
   // first line determines the column sizes
   let colSizes: number[] = getColumnSizes(rawLines[0])
-  console.log(colSizes)
+  let colStarts: number[] = []
+  let colEnds: number[] = []
+  for (const size of colSizes) {
+    colStarts.push(colEnds[colEnds.length - 1] || 0)
+    colEnds.push(colStarts[colStarts.length - 1] + size)
+  }
 
-  return []
+  const records: IWorkbook[] = []
+  for (let i = 1; i < rawLines.length; i++) {
+    if (rawLines[i].length === 0) continue
+
+    const line = rawLines[i]
+    records.push({
+      Name: line.substring(colStarts[0], colEnds[0]).trim(),
+      Address: line.substring(colStarts[1], colEnds[1]).trim(),
+      Postcode: line.substring(colStarts[2], colEnds[2]).trim(),
+      Phone: line.substring(colStarts[3], colEnds[3]).trim(),
+      CreditLimit: Number(line.substring(colStarts[4], colEnds[4]).trim()) / 100,
+      Birthday: parseDate(line.substring(colStarts[5], colEnds[5]).trim())
+    })
+  }
+
+  return records
 }
 
 async function writeJSON (records: IWorkbook[]): Promise<void> {
