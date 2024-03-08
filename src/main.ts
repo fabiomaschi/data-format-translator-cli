@@ -1,15 +1,16 @@
 import * as csvToJson from 'csvtojson'
-import { Readable } from 'stream'
+import { join } from 'path'
 
 //
 // Data schema
 //
+
 interface IWorkbook {
   Name: string
   Address: string
   Postcode: string
   Phone: string
-  CreditLimit: number
+  "Credit Limit": number
   Birthday: string
 }
 
@@ -18,16 +19,24 @@ const colParser = {
   Address: 'string',
   Postcode: 'string',
   Phone: 'string',
-  CreditLimit: 'number',
+  "Credit Limit": 'number',
   Birthday: 'string'
 }
 
-const columnTitles = ["Name", "Address", "Postcode", "Phone", "Credit Limit", "Birthday"]
+function streamToString (stream: NodeJS.ReadWriteStream): Promise<string> {
+  const chunks: any[] = [];
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk) => chunks.push(Buffer.from(chunk, 'latin1')));
+    stream.on('error', (err) => reject(err));
+    stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+  })
+}
 
-async function readCSV (inputStream: Readable): Promise<IWorkbook[]> {
+
+async function readCSV (raw: string): Promise<IWorkbook[]> {
   return await new Promise((resolve, reject) => {
     void csvToJson({ checkColumn: true, colParser, headers: Object.keys(colParser), ignoreEmpty: true })
-      .fromStream(inputStream)
+      .fromString(raw)
       .on('error', (error) => {
         reject(error)
       })
@@ -40,14 +49,14 @@ async function readCSV (inputStream: Readable): Promise<IWorkbook[]> {
 function getColumnSizes (titleLine: string): number[] {
   const columnSizes: number[] = []
 
-  for (const title of columnTitles) {
+  for (const title of Object.keys(colParser)) {
     const startPos = titleLine.indexOf(title)
     if (startPos === -1) {
       console.error(`Column "${title}" not found`)
       process.exit(1)
     }
 
-    const endPos = titleLine.indexOf(columnTitles[columnTitles.indexOf(title) + 1], startPos)
+    const endPos = titleLine.indexOf(Object.keys(colParser)[Object.keys(colParser).indexOf(title) + 1], startPos)
     if (endPos !== -1) {
       columnSizes.push(endPos - startPos)
     } else {
@@ -62,13 +71,8 @@ function parseDate (raw: string): string {
   return `${raw.substring(6, 8)}/${raw.substring(4, 6)}/${raw.substring(0, 4)}`
 }
 
-async function readPRN (inputStream: Readable): Promise<IWorkbook[]> {
-  // convert stream to raw lines
-  const chunks = [];
-  for await (let chunk of inputStream) {
-    chunks.push(chunk);
-  }
-  const rawLines = Buffer.concat(chunks).toString().split('\r\n')
+async function readPRN (raw: string): Promise<IWorkbook[]> {
+  const rawLines = raw.split('\r\n')
 
   // first line determines the column sizes
   let colSizes: number[] = getColumnSizes(rawLines[0])
@@ -89,7 +93,7 @@ async function readPRN (inputStream: Readable): Promise<IWorkbook[]> {
       Address: line.substring(colStarts[1], colEnds[1]).trim(),
       Postcode: line.substring(colStarts[2], colEnds[2]).trim(),
       Phone: line.substring(colStarts[3], colEnds[3]).trim(),
-      CreditLimit: Number(line.substring(colStarts[4], colEnds[4]).trim()) / 100,
+      "Credit Limit": Number(line.substring(colStarts[4], colEnds[4]).trim()) / 100,
       Birthday: parseDate(line.substring(colStarts[5], colEnds[5]).trim())
     })
   }
@@ -110,7 +114,9 @@ async function writeHTML (records: IWorkbook[]): Promise<void> {
   Object.keys(colParser).forEach(key => console.log(`<th>${key}</th>`))
   console.log('</tr>')
   records.forEach(record => {
-    console.log(`<tr><td>${record.Name}</td><td>${record.Address}</td><td>${record.Postcode}</td><td>${record.Phone}</td><td>${record.CreditLimit}</td><td>${record.Birthday}</td></tr>`)
+    Object.keys(record).forEach(key => {
+      console.log(`<td>${record[key as keyof IWorkbook]}</td>`)
+    })
   });
   console.log('</table>')
   console.log('</body>')
@@ -118,7 +124,7 @@ async function writeHTML (records: IWorkbook[]): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  
+
   //
   // Input validation
   //
@@ -144,16 +150,14 @@ async function main(): Promise<void> {
   // Input stream
   //
 
-  const inputStream = process.stdin
+  const raw = await streamToString(process.stdin.setEncoding('latin1'))
+
   let records: IWorkbook[] = []
-
   if (inFormat === 'csv') {
-    records = await readCSV(inputStream)
+    records = await readCSV(raw)
   } else {
-    records = await readPRN(inputStream)
+    records = await readPRN(raw)
   }
-
-  console.log(records)
 
   //
   // Output stream

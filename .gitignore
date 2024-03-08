@@ -19,3 +19,4 @@ logs/
 Thumbs.db
 
 package-lock.json
+*.txt
