@@ -12,6 +12,8 @@ npm run build
 ```
 
 ## Main test
+After building, run the cli using `node dist/main.js csv|prn html|json`.
+
 ```bash
 cat ./Workbook2.csv | node dist/main.js csv html > csv.html.txt
 cat ./Workbook2.prn | node dist/main.js prn html > prn.html.txt
@@ -27,9 +29,11 @@ diff csv.json.txt prn.json.txt
 - Address treated as free text, print as provided
 - Postcode treated as free text, print as provided
 - Phone without country cannot be printed in a standard format, so treat as free text and print as provided
+- Output date format as DD/MM/YYYY
 
+## Task description
 <details>
-<summary>Task description</summary>
+<summary>Click to expand</summary>
 ## The task
 Given are two files - both contain the same content - one is a CSV file the other is a PRN file, 
 we want you write a command line utility which will read these CSV files and PRN files from stdin and, 
