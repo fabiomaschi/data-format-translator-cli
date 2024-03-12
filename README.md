@@ -23,6 +23,23 @@ cat ./Workbook2.prn | node dist/main.js prn json > prn.json.txt
 diff csv.json.txt prn.json.txt
 ```
 
+## Docker version
+Be sure to have [Docker](https://docs.docker.com/desktop/) installed. Then, simply build the docker image with
+
+```bash
+docker build -t app .
+```
+
+and run the main test as:
+```bash
+cat ./Workbook2.csv | docker run -i app csv html > csv.html.txt
+cat ./Workbook2.prn | docker run -i app prn html > prn.html.txt
+diff csv.html.txt prn.html.txt
+cat ./Workbook2.csv | docker run -i app csv json > csv.json.txt
+cat ./Workbook2.prn | docker run -i app prn json > prn.json.txt
+diff csv.json.txt prn.json.txt
+```
+
 ## Assumptions
 
 - Data schema is constant
